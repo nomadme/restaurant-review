@@ -298,6 +298,8 @@ nav h1 a {
   line-height: 30px;
 }
 #reviews-list li p {
+  color: #666666;
+  line-height: 1.8;
   margin: 0 0 10px;
 }
 .review-title li:first-child{
@@ -306,6 +308,16 @@ nav h1 a {
 }
 .review-title li:last-child{
   float: right;
+}
+.review-content p:first-child{
+  text-transform: uppercase;
+  font-weight: 600;
+  color: #fff !important;
+  letter-spacing: 2px;
+  padding: 0 10px;
+  width: fit-content;
+  border-radius: 3px;
+  background: #ffa500;
 }
 #restaurant-hours td {
   color: #666;
