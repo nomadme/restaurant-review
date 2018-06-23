@@ -3,6 +3,9 @@ let restaurants,
   cuisines;
 var map;
 var markers = [];
+var staticCache = 'restaurant-static-cache';
+var assetCache = 'restaurant-image-cache';
+var allCaches = [staticCache, assetCache];
 
 /**
  * @description Fetch neighborhoods and cuisines as soon as the page is loaded.
@@ -145,8 +148,15 @@ createRestaurantHTML = (restaurant) => {
   const li = document.createElement('li');
 
   const image = document.createElement('img');
+  const imageUrlBase = DBHelper.imageUrlForRestaurant(restaurant);
+  const urlDetails = imageUrlBase.split('.');
+  const image1x = urlDetails[0] + '_1x.' + urlDetails[1];
+  const image2x = urlDetails[0] + '_2x.' + urlDetails[1];
+
   image.className = 'restaurant-img';
-  image.src = DBHelper.imageUrlForRestaurant(restaurant);
+  image.src = image1x;
+  image.srcset = `${image1x} 324w, ${image2x} 600w`;
+  image.sizes = '(max-width: 324px) 324px, (max-width: 600px) 600px';
   image.alt = restaurant.name + ' image';
   li.append(image);
 
@@ -169,7 +179,7 @@ createRestaurantHTML = (restaurant) => {
   const more = document.createElement('a');
   more.innerHTML = 'View Details';
   more.href = DBHelper.urlForRestaurant(restaurant);
-  container.append(more)
+  container.append(more);
 
   return li
 }
