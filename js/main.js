@@ -3,9 +3,6 @@ let restaurants,
   cuisines;
 var map;
 var markers = [];
-var staticCache = 'restaurant-static-cache';
-var assetCache = 'restaurant-image-cache';
-var allCaches = [staticCache, assetCache];
 
 /**
  * @description Fetch neighborhoods and cuisines as soon as the page is loaded.

@@ -36,7 +36,7 @@
   <script>
     if ("serviceWorker" in navigator){
       navigator.serviceWorker
-        .register("js/serviceWorker.js")
+        .register("serviceWorker.js")
         .then(reg =>{
           console.log("Service worker registration done: " + reg.scope);
         })
