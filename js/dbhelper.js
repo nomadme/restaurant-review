@@ -8,27 +8,42 @@ class DBHelper {
    * Change this to restaurants.json file location on your server.
    */
   static get DATABASE_URL() {
-    const port = 8090 // Change this to your server port
-    return `http://localhost:${port}/data/restaurants.json`;
+    const port = 1337; // Change this to your server port
+    return `http://localhost:${port}/restaurants`;
   }
 
   /**
    * Fetch all restaurants.
    */
-  static fetchRestaurants(callback) {
-    let xhr = new XMLHttpRequest();
-    xhr.open('GET', DBHelper.DATABASE_URL);
-    xhr.onload = () => {
-      if (xhr.status === 200) { // Got a success response from server!
-        const json = JSON.parse(xhr.responseText);
-        const restaurants = json.restaurants;
-        callback(null, restaurants);
-      } else { // Oops!. Got an error from server.
-        const error = (`Request failed. Returned status of ${xhr.status}`);
+  static fetchRestaurants(callback, id) {
+    let fetchURL;
+
+    if (!id) {
+      fetchURL = DBHelper.DATABASE_URL;
+    } else {
+      fetchURL = DBHelper.DATABASE_URL + '/' + id;
+    }
+
+    fetch(DBHelper.DATABASE_URL, {method: 'GET'})
+      .then(response => {
+        // save all data to db
+        response.json().then(values => {
+          values.forEach(function (data) {
+            DBHelper.queryDB().set(data.id, data)
+          })
+        });
+
+        return DBHelper.queryDB().getAll().then(allObjs => {
+          return allObjs;
+        })
+      })
+      .then(res => {
+        callback(null, res);
+      })
+      .catch(err => {
+        const error = (`Request failed. Returned status of ${err.status}`);
         callback(error, null);
-      }
-    };
-    xhr.send();
+      });
   }
 
   /**
@@ -91,7 +106,7 @@ class DBHelper {
       if (error) {
         callback(error, null);
       } else {
-        let results = restaurants
+        let results = restaurants;
         if (cuisine != 'all') { // filter by cuisine
           results = results.filter(r => r.cuisine_type == cuisine);
         }
@@ -150,7 +165,7 @@ class DBHelper {
    * Restaurant image URL.
    */
   static imageUrlForRestaurant(restaurant) {
-    return (`/img/${restaurant.photograph}`);
+    return (`/img/${restaurant.id}`);
   }
 
   /**
@@ -165,6 +180,75 @@ class DBHelper {
       animation: google.maps.Animation.DROP}
     );
     return marker;
+  }
+
+  /**
+   * @description Handle IndexDB
+   * @type {Promise<DB>}
+   */
+  static startDB() {
+    const dbPromise = idb.open('restaurants-data', 1, upgradeDB => {
+      upgradeDB.createObjectStore('restaurants');
+    });
+
+    return dbPromise;
+  }
+
+  static queryDB(){
+    const database = {
+      getAll() {
+        return DBHelper.startDB().then(db => {
+          return db.transaction('restaurants')
+            .objectStore('restaurants').getAll();
+        })
+      },
+      get(key) {
+        return DBHelper.startDB().then(db => {
+          return db.transaction('restaurants')
+            .objectStore('restaurants').get(key);
+        });
+      },
+      set(key, val) {
+        return DBHelper.startDB().then(db => {
+          const tx = db.transaction('restaurants', 'readwrite');
+          tx.objectStore('restaurants').put(val, key);
+          return tx.complete;
+        });
+      },
+      delete(key) {
+        return DBHelper.startDB().then(db => {
+          const tx = db.transaction('restaurants', 'readwrite');
+          tx.objectStore('restaurants').delete(key);
+          return tx.complete;
+        });
+      },
+      clear() {
+        return DBHelper.startDB().then(db => {
+          const tx = db.transaction('restaurants', 'readwrite');
+          tx.objectStore('restaurants').clear();
+          return tx.complete;
+        });
+      },
+      keys() {
+        return DBHelper.startDB().then(db => {
+          const tx = db.transaction('restaurants');
+          const keys = [];
+          const store = tx.objectStore('restaurants');
+
+          // This would be store.getAllKeys(), but it isn't supported by Edge or Safari.
+          // openKeyCursor isn't supported by Safari, so we fall back
+          (store.iterateKeyCursor || store.iterateCursor).call(store, cursor => {
+            if (!cursor) return;
+            keys.push(cursor.key);
+            cursor.continue();
+          });
+
+          return tx.complete.then(() => keys);
+        });
+      }
+    };
+
+    return database;
   }
 
 }

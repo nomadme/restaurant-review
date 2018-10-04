@@ -3,6 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#317EFB"/>
+  <link rel="manifest" href="/manifest.json">
   <link rel="stylesheet" src="//normalize-css.googlecode.com/svn/trunk/normalize.css" />
   <link rel="stylesheet" href="css/styles.css">
   <title>Restaurant Reviews</title>
@@ -36,7 +38,7 @@
   <script>
     if ("serviceWorker" in navigator){
       navigator.serviceWorker
-        .register("serviceWorker.js")
+        .register("sw.js")
         .then(reg =>{
           console.log("Service worker registration done: " + reg.scope);
         })
@@ -45,6 +47,7 @@
         });
     }
   </script>
+  <script src="js/idb.js"></script>
   <script src="js/dbhelper.js"></script>
   <script src="js/main.js"></script>
   <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBwYnSDhDyV9AmObSh1mKen-5TVELAXWk8&libraries=places&callback=initMap"></script>

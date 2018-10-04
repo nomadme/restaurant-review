@@ -1,0 +1,25 @@
+{
+  "short_name": "Restaurant",
+  "name": "Restaurant Search Application",
+  "icons": [
+    {
+      "src": "/img/oct.png",
+      "type": "image/png",
+      "sizes": "50x50"
+    },
+    {
+      "src": "/img/oct-2.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/img/oct-3.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#3367D6",
+  "display": "fullscreen",
+  "theme_color": "#317EFB"
+}

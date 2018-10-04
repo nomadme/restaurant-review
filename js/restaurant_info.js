@@ -60,7 +60,7 @@ fillRestaurantHTML = (restaurant = self.restaurant) => {
   const image = document.getElementById('restaurant-img');
   image.className = 'restaurant-img';
   image.alt = restaurant.name + ' image';
-  image.src = DBHelper.imageUrlForRestaurant(restaurant);
+  image.src = DBHelper.imageUrlForRestaurant(restaurant) + '.jpg';
 
   const cuisine = document.getElementById('restaurant-cuisine');
   cuisine.innerHTML = restaurant.cuisine_type;
@@ -169,14 +169,14 @@ fillBreadcrumb = (restaurant = self.restaurant) => {
  * @return {*}
  */
 getParameterByName = (name, url) => {
-  if (!url)
-    url = window.location.href;
+  if (!url) url = window.location.href;
+
   name = name.replace(/[\[\]]/g, '\\$&');
-  const regex = new RegExp(`[?&]${name}(=([^&#]*)|&|#|$)`),
-    results = regex.exec(url);
-  if (!results)
-    return null;
-  if (!results[2])
-    return '';
+
+  const regex = new RegExp(`[?&]${name}(=([^&#]*)|&|#|$)`);
+  let results = regex.exec(url);
+  if (!results) return null;
+  if (!results[2]) return '';
+
   return decodeURIComponent(results[2].replace(/\+/g, ' '));
-}
+};
