@@ -24,5 +24,9 @@ In a terminal, check the version of Python you have: `python -V`. If you have Py
 
 Most of the code in this project has been written to the ES6 JavaScript specification for compatibility with modern web browsers and future proofing JavaScript code. As much as possible, try to maintain use of ES6 in any additional JavaScript you write. 
 
+## Project Overview: Stage 2
+1. This project requires external server to run. You can get the required server from this [repository](git@github.com:nomadme/mws-2.git) and follow the instruction in the readme.
+2. Once your external server running, come back to this project and visit the site at: `http://localhost:8000`.
+3. Ta-da! You are running this project from external server.
 
 
