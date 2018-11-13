@@ -38,17 +38,47 @@
     <!-- Beginning restaurant -->
     <section id="restaurant-container">
       <h2 id="restaurant-name" tabindex="0"></h2>
-      <img id="restaurant-img" tabindex="0">
+      <img id="restaurant-img" alt tabindex="0">
       <p id="restaurant-cuisine" tabindex="0"></p>
       <p id="restaurant-address" tabindex="0"></p>
       <table id="restaurant-hours" tabindex="0"></table>
     </section>
     <!-- end restaurant -->
+
+    <!-- Review form-->
+    <section id="reviews-form">
+      <form action="/restaurant.html?id=1">
+        <ul class="star-rating">
+          <li class="icon-star"></li>
+          <li class="icon-star"></li>
+          <li class="icon-star"></li>
+          <li class="icon-star"></li>
+          <li class="icon-star"></li>
+        </ul>
+        <label for="name">Your name:</label>
+        <input type="text" name="name" id="name" placeholder="Your name">
+        <input type="hidden" name="restaurant_id" id="restaurant_id" value="1">
+        <label for="comments">Comment</label>
+        <textarea name="comments" id="comments" cols="30" rows="10"></textarea>
+        <label for="rating">Please rate</label>
+        <select name="rating" id="rating">
+          <option value="5">5 Star</option>
+          <option value="4">4 Star</option>
+          <option value="3">3 Star</option>
+          <option value="2">2 Star</option>
+          <option value="1">1 Star</option>
+        </select>
+        <button type="button" id="submit-review">Submit Review</button>
+      </form>
+    </section>
+    <!-- end review form-->
+    
     <!-- Beginning reviews -->
     <section id="reviews-container">
       <ul id="reviews-list"></ul>
     </section>
     <!-- End reviews -->
+
   </main>
   <!-- End main -->
 

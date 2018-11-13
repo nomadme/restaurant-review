@@ -3,13 +3,18 @@
  */
 class DBHelper {
 
+  static getPort() {
+    return 1337; // Change this to your server port;
+  }
   /**
    * Database URL.
-   * Change this to restaurants.json file location on your server.
    */
   static get DATABASE_URL() {
-    const port = 1337; // Change this to your server port
-    return `http://localhost:${port}/restaurants`;
+    return `http://localhost:${this.getPort()}/restaurants`;
+  }
+
+  static get REVIEW_URL() {
+    return `http://localhost:${this.getPort()}/reviews`;
   }
 
   /**
@@ -24,18 +29,30 @@ class DBHelper {
       fetchURL = DBHelper.DATABASE_URL + '/' + id;
     }
 
-    fetch(DBHelper.DATABASE_URL, {method: 'GET'})
-      .then(response => {
-        // save all data to db
-        response.json().then(values => {
-          values.forEach(function (data) {
-            DBHelper.queryDB().set(data.id, data)
-          })
-        });
-
-        return DBHelper.queryDB().getAll().then(allObjs => {
+    if (!navigator.onLine)
+    {
+      console.log('Application is offline, loading local data...');
+      DBHelper.queryDB().getAll()
+        .then(allObjs => {
           return allObjs;
         })
+    }
+
+    fetch(fetchURL, {method: 'GET'})
+      .then(response => {
+        return response.json();
+      })
+      .then(res => {
+          // save all data to db
+          res.forEach(function (data) {
+            DBHelper.fetchReviews(null, data.id)
+              .then(reviews => {
+                const restaurant = data;
+                restaurant.reviews = reviews;
+                DBHelper.queryDB().set(data.id, restaurant);
+              })
+          });
+        return res;
       })
       .then(res => {
         callback(null, res);
@@ -46,23 +63,54 @@ class DBHelper {
       });
   }
 
+  /*
+   * Fetch all reviews
+   */
+  static fetchReviews(reviewID, restaurantID){
+    let fetchURL;
+    if (!reviewID && !restaurantID){
+      fetchURL = this.REVIEW_URL;
+    } else if (reviewID && !restaurantID) {
+      fetchURL = this.REVIEW_URL + '/' + reviewID;
+    } else if (!reviewID) {
+      fetchURL = this.REVIEW_URL + '/?restaurant_id=' + restaurantID
+    }
+
+    return fetch(fetchURL, {method: 'GET'})
+      .then(response => {
+
+        if (response.ok) {
+         return response.json();
+        }
+        return Promise.reject('We failed to get reviews');
+      })
+      .catch(err => {
+        console.log('Request failed at ' + fetchURL)
+      })
+  }
+
   /**
    * Fetch a restaurant by its ID.
    */
   static fetchRestaurantById(id, callback) {
-    // fetch all restaurants with proper error handling.
-    DBHelper.fetchRestaurants((error, restaurants) => {
-      if (error) {
-        callback(error, null);
-      } else {
-        const restaurant = restaurants.find(r => r.id == id);
-        if (restaurant) { // Got the restaurant
-          callback(null, restaurant);
-        } else { // Restaurant does not exist in the database
+    if (navigator.onLine){
+      fetch(this.DATABASE_URL + '/' + id)
+        .then(response => {
+          return response.json();
+        })
+        .catch(error => {
+          console.error(error);
+          return;
+        });
+    }
+
+    return this.queryDB().get(parseInt(id))
+      .then(restaurant => {
+        if (!restaurant){
           callback('Restaurant does not exist', null);
         }
-      }
-    });
+        callback(null, restaurant);
+      })
   }
 
   /**

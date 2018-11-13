@@ -65,13 +65,17 @@ fillRestaurantHTML = (restaurant = self.restaurant) => {
   const cuisine = document.getElementById('restaurant-cuisine');
   cuisine.innerHTML = restaurant.cuisine_type;
 
+  const review = document.getElementById('restaurant_id');
+  review.value = restaurant.id;
+
   // fill operating hours
   if (restaurant.operating_hours) {
     fillRestaurantHoursHTML();
   }
   // fill reviews
   fillReviewsHTML();
-}
+
+};
 
 /**
  * @description Create restaurant operating hours HTML table and add it to the webpage.
@@ -92,7 +96,7 @@ fillRestaurantHoursHTML = (operatingHours = self.restaurant.operating_hours) => 
 
     hours.appendChild(row);
   }
-}
+};
 
 /**
  * @description Create all reviews HTML and add them to the webpage.
@@ -115,7 +119,16 @@ fillReviewsHTML = (reviews = self.restaurant.reviews) => {
     ul.appendChild(createReviewHTML(review));
   });
   container.appendChild(ul);
-}
+};
+
+/**
+ * @description Add recent review to the webpage.
+ * @param review
+ */
+addNewReview = (review) => {
+  const ul = document.getElementById('reviews-list');
+  ul.appendChild(createReviewHTML(review));
+};
 
 /**
  * @description Create review HTML and add it to the webpage.
@@ -133,23 +146,35 @@ createReviewHTML = (review) => {
   title.appendChild(name);
 
   const date = document.createElement('li');
-  date.innerHTML = review.date;
+  let dateFormat = new Date(review.createdAt);
+  date.innerHTML = dateFormat.getMonth() + '/' + dateFormat.getDate() + '/' + dateFormat.getFullYear();
   title.appendChild(date);
 
   const content = document.createElement('div');
   content.classList.add('review-content');
   li.appendChild(content);
 
-  const rating = document.createElement('p');
-  rating.innerHTML = `Rating: ${review.rating}`;
-  content.appendChild(rating);
+  const staring = document.createElement('ul');
+  staring.className = 'star-rating';
+
+  for (let i=0; i<5; i++){
+    const star = document.createElement('li');
+    star.className = 'icon-star';
+    staring.appendChild(star);
+  }
+
+  for (let i=0; i<review.rating; i++){
+    staring.children[i].className += ' selected';
+  }
+
+  content.appendChild(staring);
 
   const comments = document.createElement('p');
   comments.innerHTML = review.comments;
   content.appendChild(comments);
 
   return li;
-}
+};
 
 /**
  * @description Add restaurant name to the breadcrumb navigation menu
@@ -183,3 +208,61 @@ getParameterByName = (name, url) => {
 
   return decodeURIComponent(results[2].replace(/\+/g, ' '));
 };
+
+mouseAction = element => {
+  element.addEventListener('mouseenter', event => {
+    if (event.target.classList.contains('selected')){
+      return event.target.classList.remove('selected')
+    }
+    event.target.className += ' selected';
+  })
+};
+
+(function () {
+  let form = document.getElementById('reviews-form');
+  let stars = form.querySelectorAll('li');
+
+  stars.forEach(star => {
+    mouseAction(star);
+  });
+
+  const submitButton = document.getElementById('submit-review');
+  let reviewerName = document.getElementById('name');
+  let restaurantID = document.getElementById('restaurant_id');
+  let comments = document.getElementById('comments');
+  let rating = document.getElementById('rating');
+  let review = {};
+
+  // submit review
+  submitButton.addEventListener('click', event => {
+    review.name = reviewerName.value;
+    review.restaurant_id = parseInt(restaurantID.value);
+    review.comments = comments.value;
+    review.rating = parseInt(rating.options[rating.selectedIndex].value);
+
+    let request = new Request('http://localhost:1337/reviews', {
+      method: 'POST',
+      body: JSON.stringify(review)
+    });
+
+    console.log('Sending transaction');
+
+    fetch(request)
+      .then(response => {
+        return response.json();
+      })
+      .then(recentReview => {
+        addNewReview(recentReview);
+
+        self.restaurant.reviews.push(recentReview);
+
+        // DBHelper.queryDB()
+        //   .set(self.restaurant.id, )
+      })
+      .catch(error => {
+      console.error(error);
+    });
+  })
+
+})();
+

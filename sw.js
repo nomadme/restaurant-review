@@ -1,4 +1,4 @@
-const version = '0.2.0';
+const version = '0.2.3';
 let cacheName = `restaurant-v${version}`;
 let assetCache = 'restaurant-image-cache';
 
@@ -9,7 +9,6 @@ self.addEventListener("install", event => {
         return cache.addAll([
           "/",
           "/restaurant.html",
-          "/restaurants",
           "/css/styles.css",
           "/js/idb.js",
           "/js/dbhelper.js",
@@ -28,8 +27,17 @@ self.addEventListener("install", event => {
 self.addEventListener('fetch', event => {
   let requestUrl = new URL(event.request.url);
 
+  // skip review url
+  if (requestUrl.pathname.startsWith('/reviews/')){
+    return;
+  }
+
   if (requestUrl.pathname.startsWith('/img/')){
     event.respondWith(imageCache(event.request));
+    return;
+  }
+
+  if (event.request.method === 'POST'){
     return;
   }
 
