@@ -300,9 +300,25 @@ nav h1 a {
   font-size: 20pt;
   font-weight: 200;
   letter-spacing: 0;
-  margin: 15px 0 30px;
+  margin: 0;
   text-transform: uppercase;
   line-height: 1.1;
+}
+
+#restaurant-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 15px 0;
+}
+
+.favorite {
+  color: gray;
+}
+
+.favorite.active,
+.favorite:hover {
+  color: #b55c0a;
 }
 
 #restaurant-img {

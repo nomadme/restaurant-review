@@ -75,6 +75,10 @@ fillRestaurantHTML = (restaurant = self.restaurant) => {
   // fill reviews
   fillReviewsHTML();
 
+  //favorite restaurant
+  if (restaurant.is_favorite){
+    document.getElementsByClassName('favorite')[0].className += ' active';
+  }
 };
 
 /**
@@ -125,7 +129,7 @@ fillReviewsHTML = (reviews = self.restaurant.reviews) => {
  * @description Add recent review to the webpage.
  * @param review
  */
-addNewReview = (review) => {
+renderReview = (review) => {
   const ul = document.getElementById('reviews-list');
   ul.appendChild(createReviewHTML(review));
 };
@@ -218,14 +222,17 @@ mouseAction = element => {
   })
 };
 
+processRequest = request => {
+  return fetch(request)
+    .then(response => {
+      return response.json();
+    })
+    .catch(error => {
+      console.error(error);
+    });
+}
+
 (function () {
-  let form = document.getElementById('reviews-form');
-  let stars = form.querySelectorAll('li');
-
-  stars.forEach(star => {
-    mouseAction(star);
-  });
-
   const submitButton = document.getElementById('submit-review');
   let reviewerName = document.getElementById('name');
   let restaurantID = document.getElementById('restaurant_id');
@@ -245,23 +252,50 @@ mouseAction = element => {
       body: JSON.stringify(review)
     });
 
-    console.log('Sending transaction');
+    processRequest(request)
+      .then(res => {
+        renderReview(res);
 
-    fetch(request)
-      .then(response => {
-        return response.json();
+        // add new review to the database.
+        self.restaurant.reviews.push(res);
+        DBHelper.queryDB()
+          .set(self.restaurant.id, self.restaurant)
       })
-      .then(recentReview => {
-        addNewReview(recentReview);
 
-        self.restaurant.reviews.push(recentReview);
 
-        // DBHelper.queryDB()
-        //   .set(self.restaurant.id, )
-      })
-      .catch(error => {
-      console.error(error);
-    });
+
+  });
+
+  // favorite
+  const favorite = document.getElementsByClassName('favorite')[0];
+
+  favorite.addEventListener('mouseover', event => {
+    document.body.style.cursor = 'pointer';
+  });
+  favorite.addEventListener('mouseout', event => {
+    document.body.style.cursor = '';
+  });
+
+  favorite.addEventListener('click', event => {
+    let classList = event.target.classList;
+    let like = '';
+
+    if (classList.contains('active')) {
+      like = false;
+      classList.remove('active');
+    } else {
+      like = true;
+      classList.add('active');
+    }
+
+    let request = new Request(`http://localhost:1337/restaurants/${self.restaurant.id}/`, {method:'POST',body:JSON.stringify({is_favorite: like})});
+
+    processRequest(request)
+      .then(res => {
+        // Update local DB
+        DBHelper.queryDB()
+          .set(self.restaurant.id, res)
+      });
   })
 
 })();
