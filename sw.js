@@ -1,3 +1,5 @@
+importScripts('/js/idb.js');
+
 const version = '0.2.3';
 let cacheName = `restaurant-v${version}`;
 let assetCache = 'restaurant-image-cache';
@@ -28,7 +30,7 @@ self.addEventListener('fetch', event => {
   let requestUrl = new URL(event.request.url);
 
   // skip review url
-  if (requestUrl.pathname.startsWith('/reviews/')){
+  if (requestUrl.pathname.startsWith('/reviews/') || requestUrl.pathname.startsWith('/restaurants')){
     return;
   }
 
@@ -62,6 +64,43 @@ self.addEventListener('fetch', event => {
         });
     })
   );
+});
+
+// when go live, process the data queue
+self.addEventListener('sync', event => {
+  if (event.tag === 'outbox') {
+    event.waitUntil(
+      // process all the data
+      idb.open('restaurant-outbox')
+        .then(db => {
+          return db.transaction('outbox').objectStore('outbox').getAll();
+        })
+        .then(data => {
+          return  Promise.all(data.map(item => {
+            return fetch(`http://localhost:1337/restaurants/${item.restaurantId}/`, {
+              method: 'POST',
+              body: JSON.stringify(item)
+            })
+              .then(res => {
+                return res.json();
+              })
+              .then(res => {
+                idb.open('restaurant-outbox').then(db => {
+                  const database = db.transaction('outbox', "readwrite");
+                  database.objectStore('outbox').delete(item.id);
+                  return database.complete;
+                })
+              })
+              .catch(err => {
+                console.log('Got problem on fetching data while after sync: ', err);
+              })
+          }))
+        })
+        .catch(err => {
+          console.error('Having some problem when opening db: ', err);
+        })
+    );
+  }
 });
 
 // cache images

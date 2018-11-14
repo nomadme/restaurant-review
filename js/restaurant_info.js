@@ -290,12 +290,34 @@ processRequest = request => {
 
     let request = new Request(`http://localhost:1337/restaurants/${self.restaurant.id}/`, {method:'POST',body:JSON.stringify({is_favorite: like})});
 
-    processRequest(request)
-      .then(res => {
-        // Update local DB
-        DBHelper.queryDB()
-          .set(self.restaurant.id, res)
-      });
+    if (navigator.onLine){
+      processRequest(request)
+        .then(res => {
+          console.log(res);
+          // Update local DB
+          DBHelper.queryDB()
+            .set(self.restaurant.id, res);
+        });
+    } else {
+      idb.open('restaurant-outbox', 1, function(upgradeDb) {
+        upgradeDb.createObjectStore('outbox', { autoIncrement : true, keyPath: 'id' });
+      })
+        .then(db => {
+          let transaction = db.transaction('outbox', 'readwrite');
+          transaction.objectStore('outbox').put({
+            restaurantId: self.restaurant.id,
+            is_favorite: like
+          });
+          console.log('Saved locally.');
+          return transaction.complete;
+        })
+        .then(res => {
+          navigator.serviceWorker.ready.then(reg => {
+            reg.sync.register('outbox');
+            console.log(reg.sync)
+          })
+        });
+    }
   })
 
 })();
