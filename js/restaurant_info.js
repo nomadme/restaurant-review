@@ -252,17 +252,33 @@ processRequest = request => {
       body: JSON.stringify(review)
     });
 
-    processRequest(request)
-      .then(res => {
-        renderReview(res);
-
-        // add new review to the database.
-        self.restaurant.reviews.push(res);
-        DBHelper.queryDB()
-          .set(self.restaurant.id, self.restaurant)
+    if (navigator.onLine){
+      processRequest(request)
+        .then(res => {
+          renderReview(res);
+          // add new review to the database.
+          self.restaurant.reviews.push(res);
+          DBHelper.queryDB()
+            .set(self.restaurant.id, self.restaurant)
+        })
+    } else {
+      idb.open('restaurant-outbox', 1, function(upgradeDb) {
+        upgradeDb.createObjectStore('outbox', { autoIncrement : true, keyPath: 'id' });
       })
-
-
+        .then(db => {
+          let transaction = db.transaction('outbox', 'readwrite');
+          transaction.objectStore('outbox').put(review);
+          console.log('Saved locally.');
+          renderReview(review);
+          return transaction.complete;
+        })
+        .then(res => {
+          navigator.serviceWorker.ready.then(reg => {
+            reg.sync.register('outbox');
+            console.log(reg.sync)
+          })
+        });
+    }
 
   });
 
@@ -276,6 +292,7 @@ processRequest = request => {
     document.body.style.cursor = '';
   });
 
+  // add restaurant as favorite
   favorite.addEventListener('click', event => {
     let classList = event.target.classList;
     let like = '';
