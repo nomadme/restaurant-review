@@ -77,13 +77,37 @@ window.initMap = () => {
     lat: 40.722216,
     lng: -73.987501
   };
-  self.map = new google.maps.Map(document.getElementById('map'), {
-    zoom: 12,
-    center: loc,
-    scrollwheel: false
-  });
+
+  // perform mobile mapping on mobile devices.
+  if (window.innerWidth <= 600 && window.innerHeight <= 900){
+    let m = document.getElementById('map');
+    let staticMap = document.createElement('img');
+    const screenSize = window.innerWidth + 'x' + m.clientHeight;
+
+    // get all the latlng for the restaurants
+    fetch(DBHelper.DATABASE_URL)
+      .then(res => {
+        return res.json();
+      })
+      .then(restaurants => {
+        let location = [];
+        restaurants.forEach(restaurant => {
+          const lat = restaurant.latlng.lat;
+          const lng = restaurant.latlng.lng;
+          location.push([lat, lng]);
+        });
+
+        staticMap.src = `https://maps.googleapis.com/maps/api/staticmap?center=40.722216,-73.987501&zoom=12&size=${screenSize}&markers=${location.join('|')}&key=AIzaSyC-9feG6kDPXlb55P-MTMxku872o0rY-9g`;
+        m.appendChild(staticMap);
+      });
+  } else {
+    self.map = new google.maps.Map(document.getElementById('map'), {
+      zoom: 12,
+      center: loc
+    });
+  }
   updateRestaurants();
-}
+};
 
 /**
  * @description Update page and map for current restaurants.
