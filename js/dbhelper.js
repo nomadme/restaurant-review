@@ -242,6 +242,14 @@ class DBHelper {
     return dbPromise;
   }
 
+  static startOutboxDB() {
+    const dbPromise = idb.open('restaurant-outbox', 1, upgradeDB => {
+      upgradeDB.createObjectStore('restaurant-outbox', { autoIncrement : true, keyPath: 'id' });
+    });
+
+    return dbPromise;
+  }
+
   static queryDB(){
     const database = {
       getAll() {

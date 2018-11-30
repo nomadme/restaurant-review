@@ -262,9 +262,10 @@ processRequest = request => {
             .set(self.restaurant.id, self.restaurant)
         })
     } else {
-      idb.open('restaurant-outbox', 1, function(upgradeDb) {
-        upgradeDb.createObjectStore('outbox', { autoIncrement : true, keyPath: 'id' });
-      })
+      const timeStamp = new Date();
+      review.createdAt = timeStamp.getTime();
+
+      DBHelper.startOutboxDB()
         .then(db => {
           let transaction = db.transaction('outbox', 'readwrite');
           transaction.objectStore('outbox').put(review);
@@ -272,14 +273,38 @@ processRequest = request => {
           renderReview(review);
           return transaction.complete;
         })
-        .then(res => {
-          navigator.serviceWorker.ready.then(reg => {
-            reg.sync.register('outbox');
-            console.log(reg.sync)
-          })
-        });
     }
 
+  });
+
+  // upload data when the app gets online
+  window.addEventListener('online', function(e) {
+    // get the data out of the outbox
+    DBHelper.startOutboxDB()
+      .then(db => {
+        return db.transaction('outbox').objectStore('outbox').getAll();
+      })
+      .then(data => {
+        data.forEach(restaurantData => {
+          let request = new Request('http://localhost:1337/reviews', {
+            method: 'POST',
+            body: JSON.stringify(restaurantData)
+          });
+          processRequest(request)
+            .then(res => {
+              self.restaurant.reviews.push(res);
+              DBHelper.queryDB()
+                .set(self.restaurant.id, self.restaurant)
+            });
+        })
+      })
+
+    // remove the synced data out of the outbox
+    DBHelper.startOutboxDB()
+      .then(db => {
+        const transaction = db.transaction('outbox', 'readwrite').objectStore('outbox').clear();
+        return transaction.complete;
+      })
   });
 
   // favorite
@@ -305,20 +330,20 @@ processRequest = request => {
       classList.add('active');
     }
 
-    let request = new Request(`http://localhost:1337/restaurants/${self.restaurant.id}/`, {method:'POST',body:JSON.stringify({is_favorite: like})});
+    let request = new Request(`http://localhost:1337/restaurants/${self.restaurant.id}/`, {
+      method:'POST',
+      body:JSON.stringify({is_favorite: like})
+    });
 
     if (navigator.onLine){
       processRequest(request)
         .then(res => {
-          console.log(res);
           // Update local DB
           DBHelper.queryDB()
             .set(self.restaurant.id, res);
         });
     } else {
-      idb.open('restaurant-outbox', 1, function(upgradeDb) {
-        upgradeDb.createObjectStore('outbox', { autoIncrement : true, keyPath: 'id' });
-      })
+      DBHelper.startOutboxDB()
         .then(db => {
           let transaction = db.transaction('outbox', 'readwrite');
           transaction.objectStore('outbox').put({
@@ -327,12 +352,6 @@ processRequest = request => {
           });
           console.log('Saved locally.');
           return transaction.complete;
-        })
-        .then(res => {
-          navigator.serviceWorker.ready.then(reg => {
-            reg.sync.register('outbox');
-            console.log(reg.sync)
-          })
         });
     }
   })
